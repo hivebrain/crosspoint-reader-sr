@@ -31,11 +31,12 @@ struct SettingInfo {
   SettingAction action = SettingAction::None;
 
   struct ValueRange {
-    uint8_t min;
-    uint8_t max;
-    uint8_t step;
+    uint16_t min;
+    uint16_t max;
+    uint16_t step;
   };
   ValueRange valueRange = {};
+  uint16_t CrossPointSettings::* valuePtrU16 = nullptr;
 
   const char* key = nullptr;             // JSON API key (nullptr for ACTION types)
   StrId category = StrId::STR_NONE_OPT;  // Category for web UI grouping
@@ -93,6 +94,18 @@ struct SettingInfo {
     s.nameId = nameId;
     s.type = SettingType::VALUE;
     s.valuePtr = ptr;
+    s.valueRange = valueRange;
+    s.key = key;
+    s.category = category;
+    return s;
+  }
+
+  static SettingInfo ValueU16(StrId nameId, uint16_t CrossPointSettings::* ptr, const ValueRange valueRange,
+                              const char* key = nullptr, StrId category = StrId::STR_NONE_OPT) {
+    SettingInfo s;
+    s.nameId = nameId;
+    s.type = SettingType::VALUE;
+    s.valuePtrU16 = ptr;
     s.valueRange = valueRange;
     s.key = key;
     s.category = category;

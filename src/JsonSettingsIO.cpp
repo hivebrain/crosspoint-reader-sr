@@ -110,6 +110,8 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
       } else {
         doc[info.key] = strPtr;
       }
+    } else if (info.valuePtrU16) {
+      doc[info.key] = s.*(info.valuePtrU16);
     } else {
       doc[info.key] = s.*(info.valuePtr);
     }
@@ -143,6 +145,17 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
     applyLegacyStatusBarSettings(s);
   }
 
+  // Legacy migration: if old unified screenMargin exists but per-side margins are absent,
+  // apply the old value to all four sides.
+  if (!doc["screenMargin"].isNull() && doc["screenMarginTop"].isNull()) {
+    const uint16_t oldMargin = doc["screenMargin"] | (uint16_t)5;
+    s.screenMarginTop = oldMargin;
+    s.screenMarginRight = oldMargin;
+    s.screenMarginBottom = oldMargin;
+    s.screenMarginLeft = oldMargin;
+    if (needsResave) *needsResave = true;
+  }
+
   for (const auto& info : getSettingsList()) {
     if (!info.key) continue;
     // Dynamic entries (KOReader etc.) are stored in their own files — skip.
@@ -171,6 +184,16 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
       }
       strncpy(destPtr, val.c_str(), info.stringMaxLen - 1);
       destPtr[info.stringMaxLen - 1] = '\0';
+    } else if (info.valuePtrU16) {
+      const uint16_t fieldDefault = s.*(info.valuePtrU16);
+      uint16_t v = doc[info.key] | fieldDefault;
+      if (info.type == SettingType::VALUE) {
+        if (v < info.valueRange.min)
+          v = info.valueRange.min;
+        else if (v > info.valueRange.max)
+          v = info.valueRange.max;
+      }
+      s.*(info.valuePtrU16) = v;
     } else {
       const uint8_t fieldDefault = s.*(info.valuePtr);  // struct-initializer default, read before we overwrite it
       uint8_t v = doc[info.key] | fieldDefault;

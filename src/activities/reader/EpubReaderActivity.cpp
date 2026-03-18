@@ -514,9 +514,9 @@ void EpubReaderActivity::render(RenderLock&& lock) {
   int orientedMarginTop, orientedMarginRight, orientedMarginBottom, orientedMarginLeft;
   renderer.getOrientedViewableTRBL(&orientedMarginTop, &orientedMarginRight, &orientedMarginBottom,
                                    &orientedMarginLeft);
-  orientedMarginTop += SETTINGS.screenMargin;
-  orientedMarginLeft += SETTINGS.screenMargin;
-  orientedMarginRight += SETTINGS.screenMargin;
+  orientedMarginTop += SETTINGS.screenMarginTop;
+  orientedMarginLeft += SETTINGS.screenMarginLeft;
+  orientedMarginRight += SETTINGS.screenMarginRight;
 
   const uint8_t statusBarHeight = UITheme::getInstance().getStatusBarHeight();
 
@@ -524,10 +524,10 @@ void EpubReaderActivity::render(RenderLock&& lock) {
   if (automaticPageTurnActive &&
       (statusBarHeight == 0 || statusBarHeight == UITheme::getInstance().getProgressBarHeight())) {
     orientedMarginBottom +=
-        std::max(SETTINGS.screenMargin,
-                 static_cast<uint8_t>(statusBarHeight + UITheme::getInstance().getMetrics().statusBarVerticalMargin));
+        std::max(static_cast<int>(SETTINGS.screenMarginBottom),
+                 static_cast<int>(statusBarHeight + UITheme::getInstance().getMetrics().statusBarVerticalMargin));
   } else {
-    orientedMarginBottom += std::max(SETTINGS.screenMargin, statusBarHeight);
+    orientedMarginBottom += std::max(static_cast<int>(SETTINGS.screenMarginBottom), static_cast<int>(statusBarHeight));
   }
 
   if (!section) {
