@@ -19,7 +19,7 @@ namespace {
 constexpr size_t CHUNK_SIZE = 8 * 1024;  // 8KB chunk for reading
 // Cache file magic and version
 constexpr uint32_t CACHE_MAGIC = 0x54585449;  // "TXTI"
-constexpr uint8_t CACHE_VERSION = 2;          // Increment when cache format changes
+constexpr uint8_t CACHE_VERSION = 3;          // Increment when cache format changes (v3: per-side margins)
 }  // namespace
 
 void TxtReaderActivity::onEnter() {
@@ -92,17 +92,20 @@ void TxtReaderActivity::initializeReader() {
 
   // Store current settings for cache validation
   cachedFontId = SETTINGS.getReaderFontId();
-  cachedScreenMargin = SETTINGS.screenMargin;
+  cachedMarginTop = SETTINGS.screenMarginTop;
+  cachedMarginRight = SETTINGS.screenMarginRight;
+  cachedMarginBottom = SETTINGS.screenMarginBottom;
+  cachedMarginLeft = SETTINGS.screenMarginLeft;
   cachedParagraphAlignment = SETTINGS.paragraphAlignment;
 
   // Calculate viewport dimensions
   renderer.getOrientedViewableTRBL(&cachedOrientedMarginTop, &cachedOrientedMarginRight, &cachedOrientedMarginBottom,
                                    &cachedOrientedMarginLeft);
-  cachedOrientedMarginTop += cachedScreenMargin;
-  cachedOrientedMarginLeft += cachedScreenMargin;
-  cachedOrientedMarginRight += cachedScreenMargin;
+  cachedOrientedMarginTop += cachedMarginTop;
+  cachedOrientedMarginLeft += cachedMarginLeft;
+  cachedOrientedMarginRight += cachedMarginRight;
   cachedOrientedMarginBottom +=
-      std::max(cachedScreenMargin, static_cast<uint8_t>(UITheme::getInstance().getStatusBarHeight()));
+      std::max(static_cast<int>(cachedMarginBottom), static_cast<int>(UITheme::getInstance().getStatusBarHeight()));
 
   viewportWidth = renderer.getScreenWidth() - cachedOrientedMarginLeft - cachedOrientedMarginRight;
   const int viewportHeight = renderer.getScreenHeight() - cachedOrientedMarginTop - cachedOrientedMarginBottom;
@@ -492,9 +495,13 @@ bool TxtReaderActivity::loadPageIndexCache() {
     return false;
   }
 
-  int32_t margin;
-  serialization::readPod(f, margin);
-  if (margin != cachedScreenMargin) {
+  uint16_t marginTop, marginRight, marginBottom, marginLeft;
+  serialization::readPod(f, marginTop);
+  serialization::readPod(f, marginRight);
+  serialization::readPod(f, marginBottom);
+  serialization::readPod(f, marginLeft);
+  if (marginTop != cachedMarginTop || marginRight != cachedMarginRight || marginBottom != cachedMarginBottom ||
+      marginLeft != cachedMarginLeft) {
     LOG_DBG("TRS", "Cache screen margin mismatch, rebuilding");
     f.close();
     return false;
@@ -542,7 +549,10 @@ void TxtReaderActivity::savePageIndexCache() const {
   serialization::writePod(f, static_cast<int32_t>(viewportWidth));
   serialization::writePod(f, static_cast<int32_t>(linesPerPage));
   serialization::writePod(f, static_cast<int32_t>(cachedFontId));
-  serialization::writePod(f, static_cast<int32_t>(cachedScreenMargin));
+  serialization::writePod(f, cachedMarginTop);
+  serialization::writePod(f, cachedMarginRight);
+  serialization::writePod(f, cachedMarginBottom);
+  serialization::writePod(f, cachedMarginLeft);
   serialization::writePod(f, cachedParagraphAlignment);
   serialization::writePod(f, static_cast<uint32_t>(pageOffsets.size()));
 

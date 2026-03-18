@@ -162,7 +162,14 @@ bool CrossPointSettings::loadFromBinaryFile() {
     if (++settingsRead >= fileSettingsCount) break;
     readAndValidate(inputFile, refreshFrequency, REFRESH_FREQUENCY_COUNT);
     if (++settingsRead >= fileSettingsCount) break;
-    serialization::readPod(inputFile, screenMargin);
+    {
+      uint8_t legacyMargin;
+      serialization::readPod(inputFile, legacyMargin);
+      screenMarginTop = legacyMargin;
+      screenMarginRight = legacyMargin;
+      screenMarginBottom = legacyMargin;
+      screenMarginLeft = legacyMargin;
+    }
     if (++settingsRead >= fileSettingsCount) break;
     readAndValidate(inputFile, sleepScreenCoverMode, SLEEP_SCREEN_COVER_MODE_COUNT);
     if (++settingsRead >= fileSettingsCount) break;

@@ -179,8 +179,11 @@ class CrossPointSettings {
   uint8_t refreshFrequency = REFRESH_15;
   uint8_t hyphenationEnabled = 0;
 
-  // Reader screen margin settings
-  uint8_t screenMargin = 5;
+  // Reader screen margin settings (per-side, in pixels)
+  uint16_t screenMarginTop = 5;
+  uint16_t screenMarginRight = 5;
+  uint16_t screenMarginBottom = 5;
+  uint16_t screenMarginLeft = 5;
   // OPDS browser settings
   char opdsServerUrl[128] = "";
   char opdsUsername[64] = "";
